@@ -16,7 +16,7 @@ export default function Home() {
             <a href="/dashboard" className="rounded-xl bg-gold px-5 py-3 font-semibold text-navy">See AURA in Action</a>
             <a href="/pricing" className="rounded-xl border border-silver/30 px-5 py-3 text-offwhite">Explore plans</a>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">{["12M+ models", "97% signal accuracy", "24/7 guardian"].map((v) => <div key={v} className="glass rounded-2xl p-4 text-center text-sm text-silver">{v}</div>)}</div>
+          <div className="grid gap-4 sm:grid-cols-3">{['12M+ models', '97% signal accuracy', '24/7 guardian'].map((value) => <div key={value} className="glass rounded-2xl p-4 text-center text-sm text-silver">{value}</div>)}</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass rounded-3xl p-6">
           <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-surface to-navy p-6 shadow-glow">

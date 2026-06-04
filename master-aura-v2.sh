@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="/workspaces/aura-project"
-cd "$REPO_DIR"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
 
-echo "[AURA v2] Resetting workspace"
-rm -rf apps packages .next .expo node_modules package-lock.json
-mkdir -p apps/web/app/dashboard apps/web/app/pricing apps/web/components apps/web/lib apps/mobile/app apps/mobile/components packages/core/src packages/ui/src packages/api/src
+mkdir -p apps/web/app apps/web/components apps/web/lib apps/mobile/app apps/mobile/components packages/core/src packages/ui/src packages/api/src
 
 cat > package.json <<'EOF'
 {
@@ -84,9 +82,11 @@ cat > apps/web/tsconfig.json <<'EOF'
     "paths": {
       "@/*": ["./*"]
     },
-    "plugins": [{ "name": "next" }]
+    "plugins": [{ "name": "next" }],
+    "incremental": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
 EOF
 
@@ -144,18 +144,6 @@ export default {
 } satisfies Config;
 EOF
 
-cat > apps/web/app/globals.css <<'EOF'
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root { color-scheme: dark; }
-html, body { background: linear-gradient(135deg, #080B12, #111827); color: #F8FAFC; font-family: Inter, sans-serif; }
-* { box-sizing: border-box; }
-
-.glass { background: rgba(26,31,43,0.72); border: 1px solid rgba(148,163,184,0.18); box-shadow: 0 18px 40px rgba(8,11,18,0.35); backdrop-filter: blur(18px); }
-EOF
-
 cat > apps/web/app/layout.tsx <<'EOF'
 import './globals.css';
 import type { Metadata } from 'next';
@@ -167,11 +155,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );
 }
+EOF
+
+cat > apps/web/app/globals.css <<'EOF'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { background: linear-gradient(135deg, #080B12, #111827); color: #F8FAFC; font-family: Inter, sans-serif; }
+* { box-sizing: border-box; }
+.glass { background: rgba(26,31,43,0.72); border: 1px solid rgba(148,163,184,0.18); box-shadow: 0 18px 40px rgba(8,11,18,0.35); backdrop-filter: blur(18px); }
 EOF
 
 cat > apps/web/app/page.tsx <<'EOF'
@@ -193,7 +192,7 @@ export default function Home() {
             <a href="/dashboard" className="rounded-xl bg-gold px-5 py-3 font-semibold text-navy">See AURA in Action</a>
             <a href="/pricing" className="rounded-xl border border-silver/30 px-5 py-3 text-offwhite">Explore plans</a>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">{["12M+ models", "97% signal accuracy", "24/7 guardian"].map((v) => <div key={v} className="glass rounded-2xl p-4 text-center text-sm text-silver">{v}</div>)}</div>
+          <div className="grid gap-4 sm:grid-cols-3">{['12M+ models', '97% signal accuracy', '24/7 guardian'].map((value) => <div key={value} className="glass rounded-2xl p-4 text-center text-sm text-silver">{value}</div>)}</div>
         </motion.div>
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass rounded-3xl p-6">
           <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-surface to-navy p-6 shadow-glow">
@@ -247,63 +246,6 @@ export default function Pricing() {
 }
 EOF
 
-cat > packages/core/package.json <<'EOF'
-{
-  "name": "@aura/core",
-  "version": "1.0.0",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "private": true
-}
-EOF
-
-cat > packages/core/src/index.ts <<'EOF'
-export const auraTheme = {
-  base: '#080B12',
-  surface: '#1A1F2B',
-  gold: '#D4AF37',
-  teal: '#0D9488',
-  offwhite: '#F8FAFC',
-  silver: '#94A3B8'
-};
-
-export function healthScore(value: number) {
-  return Math.max(0, Math.min(100, value));
-}
-EOF
-
-cat > packages/ui/package.json <<'EOF'
-{
-  "name": "@aura/ui",
-  "version": "1.0.0",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "private": true
-}
-EOF
-
-cat > packages/ui/src/index.ts <<'EOF'
-export function Surface({ children }: { children: React.ReactNode }) {
-  return <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl">{children}</section>;
-}
-EOF
-
-cat > packages/api/package.json <<'EOF'
-{
-  "name": "@aura/api",
-  "version": "1.0.0",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "private": true
-}
-EOF
-
-cat > packages/api/src/index.ts <<'EOF'
-export function aiSummary(input: string) {
-  return `AURA analysis ready: ${input}`;
-}
-EOF
-
 cat > apps/mobile/package.json <<'EOF'
 {
   "name": "@aura/mobile",
@@ -316,22 +258,22 @@ cat > apps/mobile/package.json <<'EOF'
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~56.0.8",
-    "expo-router": "~56.2.8",
-    "react": "18.3.1",
-    "react-native": "0.76.1",
-    "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "^4.25.2",
-    "@react-navigation/native": "^7.2.5",
-    "@react-native-async-storage/async-storage": "^1.7.0",
+    "@react-native-async-storage/async-storage": "^2.0.1",
+    "@react-navigation/native": "^6.1.18",
     "bcryptjs": "^2.4.0",
+    "expo": "~51.0.38",
+    "expo-router": "~3.5.24",
     "jsonwebtoken": "^9.0.1",
     "nativewind": "^4.0.0",
+    "react": "18.3.1",
+    "react-native": "0.74.5",
+    "react-native-safe-area-context": "4.0.1",
+    "react-native-screens": "~3.19.0",
     "react-native-svg": "^15.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
-    "@types/react": "^18.3.12"
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.3"
   }
 }
 EOF
@@ -349,12 +291,11 @@ cat > apps/mobile/tsconfig.json <<'EOF'
 }
 EOF
 
-cat > apps/mobile/app/_layout.tsx <<'EOF'
-import { Stack } from 'expo-router';
-
-export default function Layout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
-}
+cat > apps/mobile/babel.config.js <<'EOF'
+module.exports = function (api) {
+  api.cache(true);
+  return { presets: ['babel-preset-expo'] };
+};
 EOF
 
 cat > apps/mobile/app/index.tsx <<'EOF'
@@ -370,12 +311,24 @@ export default function MobileHome() {
 }
 EOF
 
-cat > apps/mobile/babel.config.js <<'EOF'
-module.exports = function (api) {
-  api.cache(true);
-  return {
-    presets: ['babel-preset-expo']
-  };
+cat > packages/core/src/index.ts <<'EOF'
+export const auraCore = {
+  brand: 'AURA v2',
+  theme: { navy: '#080B12', surface: '#1A1F2B', gold: '#D4AF37', teal: '#0D9488' },
+  plans: ['Starter', 'Lite', 'Pro', 'Enterprise', 'Enterprise+']
+};
+EOF
+
+cat > packages/ui/src/index.ts <<'EOF'
+export function GlassCard({ children }: { children: React.ReactNode }) {
+  return <section className="glass rounded-3xl p-6">{children}</section>;
+}
+EOF
+
+cat > packages/api/src/index.ts <<'EOF'
+export const api = {
+  health: 'ok',
+  status: 'AURA API ready'
 };
 EOF
 
@@ -388,24 +341,27 @@ Monorepo scaffold generated by master-aura-v2.sh with:
 - packages/core, packages/ui, packages/api
 EOF
 
-chmod +x master-aura-v2.sh
+chmod +x "$ROOT_DIR/master-aura-v2.sh"
 
-echo "[AURA v2] Installing dependencies"
 npm install --legacy-peer-deps
 
-echo "[AURA v2] Git setup"
 git add .
-if ! git diff --cached --quiet; then
+if git diff --cached --quiet; then
+  echo "No changes to commit."
+else
   git commit -m "chore: scaffold AURA v2 monorepo" || true
 fi
 
-git push origin HEAD || true
+git push origin main || true
 
-echo "[AURA v2] Starting web dev server on port 3000"
-(npm --prefix apps/web run dev > /tmp/aura-web.log 2>&1 &)
+npm --prefix apps/web run dev > /tmp/aura-web.log 2>&1 &
+WEB_PID=$!
 
-echo "[AURA v2] Starting mobile Expo server"
-(npm --prefix apps/mobile run start > /tmp/aura-mobile.log 2>&1 &)
+cd "$ROOT_DIR/apps/mobile"
+npm run start > /tmp/aura-mobile.log 2>&1 &
+MOBILE_PID=$!
 
-echo "[AURA v2] Done. Web logs: /tmp/aura-web.log"
-echo "[AURA v2] Done. Mobile logs: /tmp/aura-mobile.log"
+sleep 8
+printf '\nWEB_PID=%s\nMOBILE_PID=%s\n' "$WEB_PID" "$MOBILE_PID"
+printf '\nWeb dev server log: %s\n' "/tmp/aura-web.log"
+printf 'Mobile dev server log: %s\n\n' "/tmp/aura-mobile.log"

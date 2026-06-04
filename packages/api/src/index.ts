@@ -1,3 +1,4 @@
-export function aiSummary(input: string) {
-  return `AURA analysis ready: ${input}`;
-}
+export const api = {
+  health: 'ok',
+  status: 'AURA API ready'
+};
