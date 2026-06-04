@@ -6,6 +6,17 @@ cd "$ROOT_DIR"
 
 mkdir -p apps/web/app apps/web/components apps/web/lib apps/mobile/app apps/mobile/components packages/core/src packages/ui/src packages/api/src
 
+cat > .gitignore <<'EOF'
+node_modules/
+.next/
+.expo/
+expo-debug.log*
+dist/
+coverage/
+.DS_Store
+*.log
+EOF
+
 cat > package.json <<'EOF'
 {
   "name": "aura-v2-monorepo",
@@ -345,14 +356,16 @@ chmod +x "$ROOT_DIR/master-aura-v2.sh"
 
 npm install --legacy-peer-deps
 
-git add .
+git rm -r --cached --ignore-unmatch node_modules apps/web/.next apps/mobile/.expo .next 2>/dev/null || true
+
+git add .gitignore README.md package.json tsconfig.base.json apps packages master-aura-v2.sh
 if git diff --cached --quiet; then
   echo "No changes to commit."
 else
   git commit -m "chore: scaffold AURA v2 monorepo" || true
 fi
 
-git push origin main || true
+git push origin HEAD:main || true
 
 npm --prefix apps/web run dev > /tmp/aura-web.log 2>&1 &
 WEB_PID=$!
