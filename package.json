@@ -1,12 +1,19 @@
 {
   "name": "aura-v2-monorepo",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:web": "npm --prefix apps/web run dev",
     "dev:mobile": "npm --prefix apps/mobile run start",
     "build:web": "npm --prefix apps/web run build",
     "install:all": "npm install"
   },
-  "packageManager": "npm@11.9.0"
+  "packageManager": "npm@11.9.0",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
 }
